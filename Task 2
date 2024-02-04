@@ -1,0 +1,103 @@
+import json
+from datetime import datetime
+
+class BudgetTracker:
+    def __init__(self, filename='transactions.json'):
+        self.filename = filename
+        self.transactions = []
+        self.load_transactions()
+
+    def load_transactions(self):
+        try:
+            with open(self.filename, 'r') as file:
+                self.transactions = json.load(file)
+        except FileNotFoundError:
+            pass  # File not found, no transactions yet
+
+    def save_transactions(self):
+        with open(self.filename, 'w') as file:
+            json.dump(self.transactions, file, indent=2)
+
+    def add_transaction(self, category, amount, transaction_type):
+        transaction = {
+            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'category': category,
+            'amount': amount,
+            'type': transaction_type,
+        }
+        self.transactions.append(transaction)
+        self.save_transactions()
+        print(f'Transaction added successfully!')
+
+    def calculate_budget(self, income):
+        total_expenses = sum(transaction['amount'] for transaction in self.transactions if transaction['type'] == 'expense')
+        remaining_budget = income - total_expenses
+        return remaining_budget
+
+    def analyze_expenses(self):
+        expense_categories = {}
+        for transaction in self.transactions:
+            if transaction['type'] == 'expense':
+                category = transaction['category']
+                amount = transaction['amount']
+                expense_categories[category] = expense_categories.get(category, 0) + amount
+
+        if not expense_categories:
+            print('No expenses found.')
+        else:
+            print('\nExpense Analysis:')
+            for category, amount in expense_categories.items():
+                print(f'{category}: ${amount}')
+
+    def display_transactions(self):
+        if not self.transactions:
+            print('No transactions found.')
+        else:
+            for transaction in self.transactions:
+                print(f'{transaction["timestamp"]} - {transaction["type"].capitalize()}: {transaction["category"]} ${transaction["amount"]}')
+
+
+def get_transaction_details():
+    category = input('Enter category: ')
+    amount = float(input('Enter amount: '))
+    transaction_type = input('Enter transaction type (income/expense): ').lower()
+    return category, amount, transaction_type
+
+
+def main():
+    budget_tracker = BudgetTracker()
+
+    while True:
+        print("\n===== Budget Tracker =====")
+        print("1. Add Income")
+        print("2. Add Expense")
+        print("3. Calculate Budget")
+        print("4. Expense Analysis")
+        print("5. Display Transactions")
+        print("6. Exit")
+
+        choice = input("Enter your choice (1-6): ")
+
+        if choice == '1':
+            _, amount, _ = get_transaction_details()
+            budget_tracker.add_transaction('income', amount, 'income')
+        elif choice == '2':
+            category, amount, transaction_type = get_transaction_details()
+            budget_tracker.add_transaction(category, amount, transaction_type)
+        elif choice == '3':
+            income = float(input('Enter total income: '))
+            remaining_budget = budget_tracker.calculate_budget(income)
+            print(f'Remaining Budget: ${remaining_budget}')
+        elif choice == '4':
+            budget_tracker.analyze_expenses()
+        elif choice == '5':
+            budget_tracker.display_transactions()
+        elif choice == '6':
+            print("Exiting the Budget Tracker. Goodbye!")
+            break
+        else:
+            print('Invalid choice. Please enter a number between 1 and 6.')
+
+
+if __name__ == "__main__":
+    main()
